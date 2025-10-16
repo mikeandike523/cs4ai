@@ -1,0 +1,5 @@
+#!/bin/bash
+
+dn="$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
+
+bash "$dn/__inenv" python "$dn/src/cli.py" "$@"

@@ -1,0 +1,32 @@
+#!/bin/bash
+set -euo pipefail
+
+dn="$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
+
+# Cross-platform virtual environment activator
+xplat_activate() {
+    if [ -f "$dn/.venv/Scripts/activate" ]; then
+        # Windows layout
+        # shellcheck disable=SC1091
+        source "$dn/.venv/Scripts/activate"
+    elif [ -f "$dn/.venv/bin/activate" ]; then
+        # POSIX layout
+        # shellcheck disable=SC1091
+        source "$dn/.venv/bin/activate"
+    else
+        echo "Error: no virtual environment found in '$dn/.venv'." >&2
+        return 1
+    fi
+}
+
+# Try to activate; exit immediately if it fails
+if ! xplat_activate; then
+    echo "Aborting: failed to activate virtual environment." >&2
+    exit 1
+fi
+
+# Only affect subprocess environment
+export PYTHONPATH="${PYTHONPATH:+$PYTHONPATH:}$dn"
+
+# Run provided command
+"$@"
