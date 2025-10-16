@@ -2,6 +2,7 @@ import os
 import click
 
 from utils.list_files import list_files as impl_list_files
+from utils.path_trees import paths_to_forest, render as render_tree
 
 # Default if neither place specifies anything
 DEFAULT_REPO = True
@@ -27,8 +28,9 @@ def cli(ctx, repo):
     default=None,  # None means "unspecified" at subcommand level
     help='Repository mode for this command.'
 )
+@click.option('--tree', is_flag=True, default=False, help='Show in a tree format.')
 @click.pass_context
-def list_files(ctx, repo_local):
+def list_files(ctx, repo_local, tree):
     """List files, honoring global and per-command --repo flags with conflict check."""
     repo_global = ctx.obj.get('repo_global', None)
 
@@ -49,9 +51,17 @@ def list_files(ctx, repo_local):
         effective_repo = DEFAULT_REPO
 
     files = impl_list_files(os.getcwd(), effective_repo)
-    for file in files:
-        print(file)
 
+    files = [os.path.normpath(file) for file in files]  # Normalize paths for tree display
+
+    if not tree:
+        for file in files:
+            print(file)
+    else:
+        
+        forest = paths_to_forest(files, delimiter=os.sep)
+        for t in forest:
+            print("\n".join(render_tree(t)))
 
 if __name__ == '__main__':
     cli(obj={})
