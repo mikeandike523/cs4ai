@@ -79,7 +79,7 @@ def paths_to_forest(
     return [roots[k] for k in sorted(roots.keys())]
 
 # ---- Pretty printer for debugging
-def render(node: Node, indent: int = 4) -> List[str]:
+def render(node: Node, indent: int = 4) -> str:
     """Render a Node tree with a colon after nodes that have children."""
     lines: list[str] = []
 
@@ -91,4 +91,4 @@ def render(node: Node, indent: int = 4) -> List[str]:
             recursion(n.children[name], depth + 1)
 
     recursion(node, 0)
-    return lines
+    return "\n".join(lines)

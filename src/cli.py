@@ -61,7 +61,7 @@ def list_files(ctx, repo_local, tree):
         
         forest = paths_to_forest(files, delimiter=os.sep)
         for t in forest:
-            print("\n".join(render_tree(t)))
+            print(render_tree(t))
 
 if __name__ == '__main__':
     cli(obj={})
