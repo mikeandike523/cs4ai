@@ -9,6 +9,7 @@ from utils.cli_ctx_helpers import (
     get_global_prop,
     resolve_bool_flag,
 )
+from utils.format_file_readout import format_file_readout
 
 # Default if neither place specifies anything
 DEFAULT_REPO = True
@@ -64,6 +65,62 @@ def list_files(ctx, repo_local, tree, included_dirs: Tuple[str]):
         for t in forest:
             print(render_tree(t))
 
+
+@cli.command()
+@click.option(
+    '--repo/--no-repo',
+    'repo_local',
+    default=None,  # None means "unspecified" at subcommand level
+    help='Repository mode for this command.'
+)
+@click.option('-o', '--out-file', type=str, required=False, default=None, help='Output file path.')
+@click.argument('included_dirs', type=str, nargs=-1)
+@click.pass_context
+def collect_files(ctx, repo_local, out_file, included_dirs: Tuple[str]):
+    """Collect project files into one readable bundle perfect for pasting into AI chatbot."""
+    repo_global = get_global_prop(ctx, "repo")
+
+    # Resolve effective value (local overrides global; falls back to default) with conflict detection
+    effective_repo = resolve_bool_flag(
+        name="--repo",
+        local_value=repo_local,
+        global_value=repo_global,
+        default=DEFAULT_REPO,
+        true_label="--repo",
+        false_label="--no-repo",
+    )
+
+    if any(os.path.isabs(dir_path) for dir_path in included_dirs):
+        raise click.UsageError("Included directory paths must be relative.")
+
+    files = impl_list_files(os.getcwd(), effective_repo, included_dirs)
+
+    forest = paths_to_forest(files, delimiter="/")
+    file_structure_readout = "\n".join(render_tree(t) for t in forest)
+
+    sections = []
+
+    sections.append(format_file_readout("File Structure", file_structure_readout ))
+
+    for file in files:
+        full_path = os.path.join(os.getcwd(), os.path.normpath(file))
+        with open(full_path, "r", encoding="utf-8") as f:
+            file_content = f.read()
+        sections.append(format_file_readout(file, file_content))
+
+    if not out_file:
+
+        print("\n\n".join(sections))
+
+    else:
+
+        with open(out_file, "w", encoding="utf-8", newline="\n") as f:
+            f.write("\n\n".join(sections))
+
+            
+
+
+        
 
 if __name__ == '__main__':
     cli(obj={})
