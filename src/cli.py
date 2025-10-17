@@ -1,4 +1,5 @@
 import os
+from typing import Tuple
 import click
 
 from utils.list_files import list_files as impl_list_files
@@ -29,8 +30,9 @@ def cli(ctx, repo):
     help='Repository mode for this command.'
 )
 @click.option('--tree', is_flag=True, default=False, help='Show in a tree format.')
+@click.argument('included_dirs', type=str, nargs=-1)
 @click.pass_context
-def list_files(ctx, repo_local, tree):
+def list_files(ctx, repo_local, tree, included_dirs: Tuple[str]):
     """List files, honoring global and per-command --repo flags with conflict check."""
     repo_global = ctx.obj.get('repo_global', None)
 
@@ -50,18 +52,23 @@ def list_files(ctx, repo_local, tree):
     else:
         effective_repo = DEFAULT_REPO
 
-    files = impl_list_files(os.getcwd(), effective_repo)
+    if any(os.path.isabs(dir_path) for dir_path in included_dirs):
+        raise click.UsageError(
+            "Included directory paths must be relative."
+        )
 
-    files = [os.path.normpath(file) for file in files]  # Normalize paths for tree display
+    files = impl_list_files(os.getcwd(), effective_repo, included_dirs)
 
     if not tree:
         for file in files:
             print(file)
     else:
         
-        forest = paths_to_forest(files, delimiter=os.sep)
+        forest = paths_to_forest(files, delimiter="/")
         for t in forest:
             print(render_tree(t))
+
+
 
 if __name__ == '__main__':
     cli(obj={})
