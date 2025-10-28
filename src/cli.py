@@ -104,8 +104,11 @@ def collect_files(ctx, repo_local, out_file, included_dirs: Tuple[str]):
 
     for file in files:
         full_path = os.path.join(os.getcwd(), os.path.normpath(file))
-        with open(full_path, "r", encoding="utf-8") as f:
-            file_content = f.read()
+        try:
+            with open(full_path, "r", encoding="utf-8") as f:
+                file_content = f.read()
+        except Exception as e:
+            file_content = "<binary file or non-utf8 text>"
         sections.append(format_file_readout(file, file_content))
 
     if not out_file:
